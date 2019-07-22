@@ -1,38 +1,40 @@
 package setting
 
 import (
-	"errors"
-	"fmt"
+	"github.com/go-ini/ini"
+	"log"
 	"os"
-	"runtime"
+	"time"
 )
 
-//var (
-//	config *ini.File
-//
-//	RunMode string
-//	HttpPort int
-//	ReadTimeout time.Duration
-//	WriteTimeout time.Duration
-//	PageSize int
-//	JwtSecret string
-//)
+var (
+	Config *ini.File
+
+	RunMode      string
+	HttpPort     int
+	ReadTimeout  time.Duration
+	WriteTimeout time.Duration
+	PageSize     int
+	JwtSecret    string
+)
 
 func Init() {
-	path := os.Getenv("GOPATH")
-	fmt.Println(path)
-
-	//config, err := ini.Load("F:/www/golang/src/gin-blog/conf/app.ini")
-	//if err != nil {
-	//	log.Fatalf("Fail to parse 'conf/app.ini': %v", err)
-	//}
-	//fmt.Println(config)
-}
-
-func CurrentFile() string {
-	_, file, _, ok := runtime.Caller(1)
-	if !ok {
-		panic(errors.New("Can not get current file info"))
+	goPath := os.Getenv("GOPATH")
+	Config, err := ini.Load(goPath + "/src/gin-blog/conf/app.ini")
+	if err != nil {
+		log.Fatalf("Fail to parse 'conf/app.ini': %v", err)
 	}
-	return file
+
+	RunMode = Config.Section("").Key("RUN_MODE").MustString("debug")
+
+	sec, err := Config.GetSection("server")
+	if err != nil {
+		log.Fatalf("Fail to get section 'server': %v", err)
+	}
+
+	HttpPort = sec.Key("HTTP_PORT").MustInt(8000)
+	ReadTimeout = time.Duration(sec.Key("READ_TIMEOUT").MustInt(60)) * time.Second
+	WriteTimeout = time.Duration(sec.Key("WRITE_TIMEOUT").MustInt(60)) * time.Second
+	JwtSecret = sec.Key("JWT_SECRET").MustString("!@)*#)!@U#@*!@!)")
+	PageSize = sec.Key("PAGE_SIZE").MustInt(10)
 }
